@@ -34,6 +34,9 @@ def show_about(parent: QWidget) -> None:
         f'<p>ソースコード: <a href="{about.REPO_URL}">{about.REPO_URL}</a></p>'
         "<p>曲名・アーティスト名で検索すると、その文字列が Apple (iTunes Search API) と "
         "MusicBrainz / Cover Art Archive に送信されます。</p>"
+        "<p>iTunes Search API の結果は、試聴（ストリーミングのみ）・ストアページへのリンク・"
+        "参考表示にのみ使用し、iTunes のジャケット画像はファイルに埋め込みません。"
+        "試聴音源とストア情報は provided courtesy of iTunes です。</p>"
         "<p>iTunes は Apple Inc. の商標です。本ソフトウェアは Apple Inc.、MusicBrainz "
         "(MetaBrainz Foundation)、Serato とは無関係で、これらから承認を受けたものではありません。</p>",
     )

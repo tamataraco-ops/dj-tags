@@ -1,6 +1,11 @@
 """iTunes Search API client - free, no API key required.
 
 Docs: https://performance-partners.apple.com/search-api
+
+The terms allow previews and album art only to promote store content: previews must be
+streamed (never saved), shown with a link to the store page and credited "provided
+courtesy of iTunes". So iTunes results are used for preview/reference only - their
+artwork is displayed but never embedded into the user's files (can_embed_artwork=False).
 """
 
 from __future__ import annotations
@@ -55,6 +60,8 @@ def search(artist: str, title: str, country: str = "JP", limit: int = 5) -> list
                     album=r.get("collectionName", ""),
                     genre=r.get("primaryGenreName", ""),
                     preview_url=r.get("previewUrl", ""),
+                    store_url=r.get("trackViewUrl", ""),
+                    can_embed_artwork=False,
                 )
                 for r in results
                 if r.get("artworkUrl100")

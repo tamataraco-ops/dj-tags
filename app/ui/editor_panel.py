@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal, QSettings, QStringListModel, QUrl
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox,
@@ -111,10 +111,6 @@ class EditorPanel(QWidget):
         self.play_file_btn.setToolTip("選択中のファイルを再生します")
         self.play_file_btn.clicked.connect(self._on_play_file)
         transport_row.addWidget(self.play_file_btn)
-        self.play_preview_btn = QPushButton("▶ 候補を試聴")
-        self.play_preview_btn.setToolTip("選択中の iTunes 候補の約30秒の試聴音源を再生します")
-        self.play_preview_btn.clicked.connect(self._on_play_preview)
-        transport_row.addWidget(self.play_preview_btn)
         self.pause_btn = QPushButton("⏸")
         self.pause_btn.setToolTip("一時停止 / 再開")
         self.pause_btn.setFixedWidth(36)
@@ -184,9 +180,38 @@ class EditorPanel(QWidget):
         self.cover_preview.setScaledContents(True)
         candidate_layout.addWidget(self.cover_preview)
 
+        right_col = QVBoxLayout()
         self.candidate_list = QListWidget()
         self.candidate_list.itemClicked.connect(self._on_candidate_clicked)
-        candidate_layout.addWidget(self.candidate_list)
+        right_col.addWidget(self.candidate_list)
+
+        # iTunes terms: previews must sit next to a link to the store page and carry
+        # the "provided courtesy of iTunes" credit, so they live here, not in the player box.
+        self.itunes_row = QWidget()
+        itunes_layout = QHBoxLayout(self.itunes_row)
+        itunes_layout.setContentsMargins(0, 0, 0, 0)
+        self.play_preview_btn = QPushButton("▶ 試聴")
+        self.play_preview_btn.setToolTip("この曲の約30秒の試聴音源をストリーミング再生します")
+        self.play_preview_btn.clicked.connect(self._on_play_preview)
+        itunes_layout.addWidget(self.play_preview_btn)
+        self.store_link_btn = QPushButton("iTunes / Apple Music で見る")
+        self.store_link_btn.setToolTip("この曲のストアページをブラウザで開きます")
+        self.store_link_btn.clicked.connect(self._on_open_store)
+        itunes_layout.addWidget(self.store_link_btn)
+        courtesy = QLabel("Provided courtesy of iTunes")
+        courtesy.setStyleSheet(f"color: {MUTED_TEXT};")
+        itunes_layout.addWidget(courtesy, 1)
+        right_col.addWidget(self.itunes_row)
+
+        self.artwork_note_label = QLabel(
+            "※ iTunes の候補は試聴・参考情報のみです。ジャケットをファイルに埋め込むには "
+            "MusicBrainz の候補を選んでください。"
+        )
+        self.artwork_note_label.setWordWrap(True)
+        self.artwork_note_label.setStyleSheet(f"color: {MUTED_TEXT};")
+        right_col.addWidget(self.artwork_note_label)
+
+        candidate_layout.addLayout(right_col)
         root.addWidget(candidate_box)
 
         # --- basic tag editor ---
@@ -395,6 +420,8 @@ class EditorPanel(QWidget):
             return
         for c in candidates:
             label = f"[{c.source}] {c.title} - {c.artist} ({c.album})"
+            if not c.can_embed_artwork:
+                label += "  ※試聴・参考のみ"
             self.candidate_list.addItem(label)
 
     def _on_search_failed(self, message: str) -> None:
@@ -435,16 +462,35 @@ class EditorPanel(QWidget):
         self.cover_preview.setPixmap(pixmap)
         self._update_artwork_buttons()
 
+    def _can_embed_selected_artwork(self) -> bool:
+        c = self.selected_candidate
+        return bool(c and c.can_embed_artwork)
+
     def _update_artwork_buttons(self) -> None:
-        ready = self.current_track is not None and self.pending_artwork_bytes is not None
+        ready = (self.current_track is not None and self.pending_artwork_bytes is not None
+                 and self._can_embed_selected_artwork())
         self.apply_artwork_btn.setEnabled(ready)
         self.apply_both_btn.setEnabled(ready)
+        blocked = self.selected_candidate is not None and not self._can_embed_selected_artwork()
+        tip = "iTunes の候補のジャケットは規約上ファイルに埋め込めません" if blocked else ""
+        self.apply_artwork_btn.setToolTip(tip)
+        self.apply_both_btn.setToolTip(tip)
 
     # --- playback ---
 
     def _update_preview_button(self) -> None:
+        """Show the iTunes preview / store link / credit row only for an iTunes candidate."""
         c = self.selected_candidate
+        is_itunes = bool(c and c.source == "iTunes")
+        self.itunes_row.setVisible(is_itunes)
+        self.artwork_note_label.setVisible(is_itunes)
         self.play_preview_btn.setEnabled(bool(c and c.preview_url))
+        self.store_link_btn.setEnabled(bool(c and c.store_url))
+
+    def _on_open_store(self) -> None:
+        c = self.selected_candidate
+        if c and c.store_url:
+            QDesktopServices.openUrl(QUrl(c.store_url))
 
     def _play(self, source: QUrl, label: str) -> None:
         self.player.stop()
@@ -462,7 +508,7 @@ class EditorPanel(QWidget):
         c = self.selected_candidate
         if not c or not c.preview_url:
             return
-        self._play(QUrl(c.preview_url), f"試聴中 ({c.source}): {c.title} - {c.artist}")
+        self._play(QUrl(c.preview_url), f"試聴中: {c.title} - {c.artist}  (provided courtesy of iTunes)")
 
     def _on_pause_toggle(self) -> None:
         if self.player.playbackState() == QMediaPlayer.PlayingState:
@@ -558,14 +604,14 @@ class EditorPanel(QWidget):
             QMessageBox.information(self, "完了", "タグを適用しました。")
 
     def _on_apply_artwork(self) -> None:
-        if not self.current_track or not self.pending_artwork_bytes:
+        if not self.current_track or not self.pending_artwork_bytes or not self._can_embed_selected_artwork():
             return
         if self._write_artwork():
             self._reload_current_track()
             QMessageBox.information(self, "完了", "ジャケットを適用しました。")
 
     def _on_apply_both(self) -> None:
-        if not self.current_track or not self.pending_artwork_bytes:
+        if not self.current_track or not self.pending_artwork_bytes or not self._can_embed_selected_artwork():
             return
         to_write = self._decide_tag_writes()
         if to_write is None:

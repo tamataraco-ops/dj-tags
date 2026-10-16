@@ -14,6 +14,9 @@ class ArtworkCandidate:
     album: str = ""
     genre: str = ""
     preview_url: str = ""  # ~30s audio sample (iTunes only; MusicBrainz has none)
+    store_url: str = ""  # page where the track can be bought (iTunes only)
+    # False when the source's terms only allow showing the artwork, not saving it into files.
+    can_embed_artwork: bool = True
 
 
 @dataclass
