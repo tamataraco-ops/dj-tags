@@ -30,6 +30,16 @@ DJ Tags のソースコードは README に記載のリポジトリで公開し�
   README 記載のリポジトリの Issue でご連絡ください。ソースコードを提供します。
 - FFmpeg は Qt が LGPL 構成でビルドしたもの（GPL 専用コンポーネントを含まない）をそのまま同梱しています。
 
+## 「Apple Music で聴く」バッジについて
+
+`app/assets/badge.svg` は Apple Inc. が提供する公式のバッジ画像（Apple の商標素材）です。
+**GNU GPL の対象外**で、DJ Tags のライセンスに基づく再配布・改変はできません。
+Apple Music Identity Guidelines（https://marketing.services.apple/apple-music-identity-guidelines）に従い、
+改変せずに Apple Music へのリンクとしてのみ使用しています。
+DJ Tags を改変して配布する場合、このバッジを使い続けるには各自でガイドラインに従う必要があります。
+
+Apple and Apple Music are trademarks of Apple Inc., registered in the U.S. and other countries.
+
 ## PyInstaller について
 
 PyInstaller はブートローダー例外付きの GPL で、PyInstaller で作った実行ファイルは任意のライセンスで配布できます。

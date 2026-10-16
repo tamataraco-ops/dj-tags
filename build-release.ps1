@@ -31,6 +31,7 @@ $version = (Select-String -Path "app\about.py" -Pattern '^VERSION = "(.+)"').Mat
     --windowed `
     --name dj-tags `
     --paths . `
+    --add-data "app\assets\badge.svg;app\assets" `
     app\main.py
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed" }
 

@@ -43,7 +43,7 @@
 1. 「フォルダを開く」で音楽フォルダを選びます。
 2. 一覧から曲を選ぶと、右側に曲の情報と検索結果の候補が表示されます。
 3. 候補をクリックするとジャケットと曲情報が「タグ編集」欄に入ります。必要に応じて修正し、「タグを適用」「ジャケットのみ適用」「ジャケット＋タグを適用」を押します。
-   ジャケットを埋め込めるのは **MusicBrainz の候補**だけです。iTunes の候補（「※試聴・参考のみ」と表示）では、試聴とストアページの表示ができます。
+   ジャケットを埋め込めるのは **MusicBrainz の候補**だけです。iTunes の候補（「※試聴・参考のみ」と表示）では、試聴と、「Apple Music で聴く」バッジからストアページを開くことができます。
 4. 正しい候補が出ないときは、検索欄の曲名・アーティストを書き換えて再検索します。
 5. 「タイアップ / アニソン情報」にタイアップ番組名・種別・ジャンルを入力し、「このトラックに適用」または「アルバム全体に適用」を押します。
 
@@ -67,7 +67,8 @@
 
 ## 商標
 
-iTunes および Apple Music は Apple Inc. の商標です。Serato は Serato Limited の商標です。
+Apple and Apple Music are trademarks of Apple Inc., registered in the U.S. and other countries.
+iTunes は Apple Inc. の商標です。Serato は Serato Limited の商標です。
 本ソフトウェアは Apple Inc.、MetaBrainz Foundation（MusicBrainz）、Serato Limited とは無関係で、これらから承認・提携を受けたものではありません。
 
 ## ライセンス

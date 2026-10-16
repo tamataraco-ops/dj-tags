@@ -37,8 +37,10 @@ def show_about(parent: QWidget) -> None:
         "<p>iTunes Search API の結果は、試聴（ストリーミングのみ）・ストアページへのリンク・"
         "参考表示にのみ使用し、iTunes のジャケット画像はファイルに埋め込みません。"
         "試聴音源とストア情報は provided courtesy of iTunes です。</p>"
-        "<p>iTunes は Apple Inc. の商標です。本ソフトウェアは Apple Inc.、MusicBrainz "
-        "(MetaBrainz Foundation)、Serato とは無関係で、これらから承認を受けたものではありません。</p>",
+        "<p>Apple and Apple Music are trademarks of Apple Inc., registered in the U.S. "
+        "and other countries. iTunes は Apple Inc. の商標です。"
+        "本ソフトウェアは Apple Inc.、MusicBrainz (MetaBrainz Foundation)、Serato とは無関係で、"
+        "これらから承認を受けたものではありません。</p>",
     )
 
 

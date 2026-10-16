@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QSettings, QStringListModel, QUrl
-from PySide6.QtGui import QDesktopServices, QPixmap
+import sys
+from pathlib import Path
+
+from PySide6.QtCore import Qt, Signal, QSettings, QSize, QStringListModel, QUrl
+from PySide6.QtGui import QDesktopServices, QPainter, QPixmap
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox,
     QListWidget, QListWidgetItem, QPushButton, QAbstractItemView, QGroupBox,
@@ -194,8 +198,7 @@ class EditorPanel(QWidget):
         self.play_preview_btn.setToolTip("この曲の約30秒の試聴音源をストリーミング再生します")
         self.play_preview_btn.clicked.connect(self._on_play_preview)
         itunes_layout.addWidget(self.play_preview_btn)
-        self.store_link_btn = QPushButton("iTunes / Apple Music で見る")
-        self.store_link_btn.setToolTip("この曲のストアページをブラウザで開きます")
+        self.store_link_btn = _apple_music_badge_button()
         self.store_link_btn.clicked.connect(self._on_open_store)
         itunes_layout.addWidget(self.store_link_btn)
         courtesy = QLabel("Provided courtesy of iTunes")
@@ -485,7 +488,9 @@ class EditorPanel(QWidget):
         self.itunes_row.setVisible(is_itunes)
         self.artwork_note_label.setVisible(is_itunes)
         self.play_preview_btn.setEnabled(bool(c and c.preview_url))
-        self.store_link_btn.setEnabled(bool(c and c.store_url))
+        # Hide rather than disable: a disabled button would draw the badge grayed out,
+        # and the guidelines forbid altering the artwork.
+        self.store_link_btn.setVisible(bool(c and c.store_url))
 
     def _on_open_store(self) -> None:
         c = self.selected_candidate
@@ -668,6 +673,45 @@ class EditorPanel(QWidget):
         manual = self._collect_manual_input()
         db.save_entry(self.current_track.artist, self.current_track.album, manual)
         self.apply_to_album_requested.emit(self.current_track.artist, self.current_track.album, manual)
+
+
+# Apple Music Identity Guidelines (https://marketing.services.apple/apple-music-identity-guidelines):
+# use Apple's artwork unmodified, at least 30px tall on screen, with clear space of at
+# least 1/10 of its height, smaller than the content it promotes, and always as a link.
+BADGE_HEIGHT = 32
+BADGE_CLEAR_SPACE = 4
+
+
+def _asset_path(name: str) -> Path:
+    # PyInstaller unpacks bundled data under sys._MEIPASS (see --add-data in build-release.ps1).
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent.parent))
+    return base / "app" / "assets" / name
+
+
+def _apple_music_badge_button() -> QPushButton:
+    """Official "Listen on Apple Music" badge (Japanese) as a link button to the store page."""
+    renderer = QSvgRenderer(str(_asset_path("badge.svg")))
+    size = renderer.defaultSize()
+    width = round(size.width() * BADGE_HEIGHT / size.height())
+    btn = QPushButton()
+    if renderer.isValid():
+        ratio = 2  # render at 2x so the badge stays crisp on high-DPI screens
+        pixmap = QPixmap(width * ratio, BADGE_HEIGHT * ratio)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        pixmap.setDevicePixelRatio(ratio)
+        btn.setIcon(pixmap)
+        btn.setIconSize(QSize(width, BADGE_HEIGHT))
+        btn.setFixedSize(width + 2 * BADGE_CLEAR_SPACE, BADGE_HEIGHT + 2 * BADGE_CLEAR_SPACE)
+        btn.setFlat(True)
+        btn.setStyleSheet("QPushButton { border: none; background: transparent; padding: 0; }")
+    else:  # badge file missing: fall back to a plain text link
+        btn.setText("Apple Music で聴く")
+    btn.setCursor(Qt.PointingHandCursor)
+    btn.setToolTip("Apple Music でこの曲のページを開きます")
+    return btn
 
 
 def _load_volume() -> int:
